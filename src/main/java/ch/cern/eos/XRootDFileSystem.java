@@ -15,7 +15,7 @@
  */
 package ch.cern.eos;
 
-import ch.cern.eos.NarSystem;
+// import ch.cern.eos.Loader_newABI.NarSystem;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.*;
 import org.apache.hadoop.fs.permission.FsPermission;
@@ -32,7 +32,22 @@ public class XRootDFileSystem extends FileSystem {
     private static DebugLogger eosDebugLogger = new DebugLogger();
 
     static {
-        NarSystem.loadLibrary();
+        boolean linked = false;
+        String[] abiList = new String[]{"", "_newABI", "_oldABI"};
+        for (String abi: abiList) {
+            try {
+                Class<?> classRef = Class.forName("ch.cern.eos.Loader" + abi + ".NarSystem");
+                Method method = classRef.getMethod("loadLibrary", classRef);
+                method.invoke(null, null);
+                linked = true;
+                break;
+            } catch (Exception e) {
+                // Just move on
+            }
+        }
+        if (linked == true) {
+            throw new RuntimeException("Could not load xrootd client library");
+        }
     }
 
     private long nHandle = 0;

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>ch.cern.eos</groupId>
     <version>1.0.4</version>
-    <artifactId>hadoop-xrootd</artifactId>
+    <artifactId>hadoop-xrootd${xrootd.abi.name}</artifactId>
     <packaging>nar</packaging>
 
     <properties>
@@ -11,9 +11,47 @@
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
         <xrootd.lib64.path>/usr/lib64</xrootd.lib64.path>
-        <xrootd.include.path>/usr/include/xrootd</xrootd.include.path>
+        <xrootd.include.path>/usr/local/Cellar/xrootd/4.10.0_1/include/xrootd/</xrootd.include.path>
     </properties>
-
+    <profiles>
+        <profile>
+        <id>defaultABI</id>
+        <activation>
+            <activeByDefault>true</activeByDefault>
+        </activation>
+        <properties>
+            <xrootd.abi.name></xrootd.abi.name>
+            <xrootd.abi.lowername></xrootd.abi.lowername>
+            <xrootd.abi.args></xrootd.abi.args>
+        </properties>
+        </profile>
+        <profile>
+        <id>newABI</id>
+		<activation>
+		<property>
+			<name>newABI</name>
+		</property>
+        </activation>
+        <properties>
+            <xrootd.abi.name>-newABI</xrootd.abi.name>
+            <xrootd.abi.lowername>_newABI</xrootd.abi.lowername>
+            <xrootd.abi.args>-D_GLIBCXX_USE_CXX11_ABI=1</xrootd.abi.args>
+        </properties>
+        </profile>
+        <profile>
+        <id>oldABI</id>
+		<activation>
+		<property>
+			<name>oldABI</name>
+		</property>
+        </activation>
+        <properties>
+            <xrootd.abi.name>-oldABI</xrootd.abi.name>
+            <xrootd.abi.lowername>_oldABI</xrootd.abi.lowername>
+            <xrootd.abi.args>-D_GLIBCXX_USE_CXX11_ABI=0</xrootd.abi.args>
+        </properties>
+		</profile>
+	</profiles>
     <dependencies>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
@@ -44,6 +82,7 @@
                 <version>3.5.1</version>
                 <extensions>true</extensions>
                 <configuration>
+                    <output>${project.artifactId}${xrootd.abi.name}-${project.version}</output>
                     <linker>
                         <options>
                             <!-- This is needed for final assembly of .so -->
@@ -64,13 +103,14 @@
                     <libraries>
                         <library>
                             <type>jni</type>
-                            <narSystemPackage>ch.cern.eos</narSystemPackage>
+                            <narSystemPackage>ch.cern.eos.Loader${xrootd.abi.lowername}</narSystemPackage>
                         </library>
                     </libraries>
                     <cpp>
                         <options>
                             <!-- Build with C++11 as xrootd-client 4.8+ requires it -->
                             <option>-std=c++0x</option>
+                            <option>${xrootd.abi.args}</option>
                         </options>
                         <!-- This are header files required by xrootd-connector cpp classes -->
                         <systemIncludePaths>
